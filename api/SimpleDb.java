@@ -13,6 +13,8 @@ import java.util.Map;
 public class SimpleDb {
 
     private static final int MAGIC = 1;
+
+    private static final String deleted = "Tombstone";
     private final FileChannel fileChannel;
     private final Map<String, Long> index = new HashMap<>();
 
@@ -109,11 +111,18 @@ public class SimpleDb {
         }
 
         String storedValue = new String(valueBytes, StandardCharsets.UTF_8);
+        if(storedValue.equals(deleted)){
+            return null;
+        }
 
         return new String(valueBytes, StandardCharsets.UTF_8);
     }
 
     public synchronized String update(String key, String value) throws IOException {
+        if(!index.containsKey(key)){
+            return null;
+
+        }
         Long offset = index.get(key);
         if(offset==null){
             return null;
@@ -148,6 +157,13 @@ public class SimpleDb {
         fileChannel.force(true);
         return get(key);
 
+    }
+
+    public void delete(String key) throws IOException {
+        if(!index.containsKey(key)){
+            return;
+        }
+        update(key, deleted);
     }
 
     private void recoverIndex() throws IOException {
@@ -187,6 +203,10 @@ public class SimpleDb {
 
 
             String key = new String(keyBytes, StandardCharsets.UTF_8);
+            String value = new String(valueBytes, StandardCharsets.UTF_8);
+            if(value.equals(deleted)){
+                return;
+            }
 
             // Update index to latest occurrence
             //rebuilding index

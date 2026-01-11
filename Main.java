@@ -19,6 +19,12 @@ public class Main {
 
         System.out.println(db.get("user:2"));
 
+        db.delete("city2");
+        db.delete("city");
+        System.out.println(db.get("city2"));
+        System.out.println(db.get("city"));
+
+
 
 
     }
