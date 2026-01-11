@@ -17,12 +17,16 @@ public class Main {
 
         db.update("user:2", "Renisha2");
 
-        System.out.println(db.get("user:2"));
+//        System.out.println(db.get("user:2"));
 
-        db.delete("city2");
-        db.delete("city");
-        System.out.println(db.get("city2"));
-        System.out.println(db.get("city"));
+//        db.delete("city2");
+//        db.delete("city");
+//        System.out.println(db.get("city2"));
+//        System.out.println(db.get("city"));
+
+//        System.out.println(db.patch("user:1","Pikashasha"));
+        System.out.println(db.get("user:1"));
+
 
 
 

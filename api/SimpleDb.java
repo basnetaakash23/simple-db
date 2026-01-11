@@ -1,6 +1,7 @@
 package api;
 
 import java.io.IOException;
+import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +14,6 @@ import java.util.Map;
 public class SimpleDb {
 
     private static final int MAGIC = 1;
-
     private static final String deleted = "Tombstone";
     private final FileChannel fileChannel;
     private final Map<String, Long> index = new HashMap<>();
@@ -153,6 +153,55 @@ public class SimpleDb {
 //            System.out.println("Written bytes this iteration: " + written);
         }
 
+        index.put(key, offset);
+        fileChannel.force(true);
+        return get(key);
+
+    }
+
+    public synchronized String patch(String key, String value) throws IOException {
+        if(!index.containsKey(key)){
+            return null;
+
+        }
+        Long offset = index.get(key);
+        if(offset==null){
+            return null;
+        }
+        ByteBuffer header = ByteBuffer.allocate(Integer.BYTES*2);
+        while(header.hasRemaining()){
+            int written = fileChannel.write(header);
+
+//            System.out.println("Written bytes this iteration: " + written);
+        }
+        header.flip();
+        int keyLength = header.getInt();
+        int valLength = header.getInt();
+
+
+        int intermediaryBytes = Integer.BYTES*2+keyLength;
+        long newPosition = offset+intermediaryBytes;
+        fileChannel.position(newPosition);
+        ByteBuffer zeroBuffer = ByteBuffer.allocate(valLength);
+        zeroBuffer.flip();
+
+        ByteBuffer buffer = ByteBuffer.allocate(valLength);
+        buffer.put(value.getBytes(StandardCharsets.UTF_8));
+        buffer.flip();
+
+
+        while(zeroBuffer.hasRemaining()){
+            fileChannel.write(zeroBuffer);
+        }
+        fileChannel.force(true);
+
+        fileChannel.position(newPosition);
+        int totalWritten = 0;
+        while(buffer.hasRemaining()){
+            int written = fileChannel.write(buffer);
+            totalWritten += written;
+//            System.out.println("Written bytes this iteration: " + written);
+        }
         index.put(key, offset);
         fileChannel.force(true);
         return get(key);
