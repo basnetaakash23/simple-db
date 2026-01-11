@@ -113,6 +113,43 @@ public class SimpleDb {
         return new String(valueBytes, StandardCharsets.UTF_8);
     }
 
+    public synchronized String update(String key, String value) throws IOException {
+        Long offset = index.get(key);
+        if(offset==null){
+            return null;
+        }
+
+        fileChannel.position(offset);
+
+        byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
+        byte[] valueBytes = value.getBytes(StandardCharsets.UTF_8);
+
+        int recordSize = Integer.BYTES*2+ keyBytes.length+ valueBytes.length;
+        ByteBuffer buffer = ByteBuffer.allocate(recordSize);
+
+        //recording format
+        buffer.putInt(keyBytes.length);
+        buffer.putInt(valueBytes.length);
+        buffer.put(keyBytes);
+        buffer.put(valueBytes);
+//        buffer.putInt(MAGIC);
+
+        buffer.flip();
+
+        fileChannel.position(offset);
+        int totalWritten = 0;
+        while(buffer.hasRemaining()){
+            int written = fileChannel.write(buffer);
+            totalWritten += written;
+//            System.out.println("Written bytes this iteration: " + written);
+        }
+
+        index.put(key, offset);
+        fileChannel.force(true);
+        return get(key);
+
+    }
+
     private void recoverIndex() throws IOException {
         long offset = 0;
         long fileSize = fileChannel.size();
