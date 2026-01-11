@@ -31,7 +31,7 @@ public class SimpleDb {
 
     }
 
-    public synchronized void put(String key, String value) throws IOException {
+    public synchronized void post(String key, String value) throws IOException {
 
         System.out.println("File Channel size: "+fileChannel.size()+" while entering key: "+key+" and value: "+value);
         byte[] keyBytes = key.getBytes(StandardCharsets.UTF_8);
